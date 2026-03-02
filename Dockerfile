@@ -17,31 +17,26 @@ RUN apt-get update && apt-get install -y \
     htop \
     tmux \
     openssh-client \
-    rclone \
-    magic-wormhole \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# Install GitHub CLI (gh) - https://github.com/cli/cli/blob/trunk/docs/install_linux.md
+# Configure external apt repositories and install packages from them.
 RUN mkdir -p -m 755 /etc/apt/keyrings && \
     wget -nv -O- https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && \
     chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
-    apt-get update && apt-get install -y gh && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install Tailscale - https://tailscale.com/download/linux
-RUN curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null && \
+    curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null && \
     curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list >/dev/null && \
-    apt-get update && apt-get install -y tailscale && \
-    rm -rf /var/lib/apt/lists/*
-
-# Add deadsnakes PPA for Python 3.13
-RUN add-apt-repository -y ppa:deadsnakes/ppa && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
     apt-get update && apt-get install -y \
+    gh \
+    tailscale \
     python3.13 \
     python3.13-venv \
     python3.13-dev \
-    && apt-get install -y python3-pip \
+    python3-pip \
+    nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Python 3.13 as default and create alias
@@ -50,11 +45,8 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 1
 
 # Create opencode user (without workspace directory)
 RUN useradd -m -s /bin/bash opencode && \
-    chown -R opencode:opencode /home/opencode && \
-    apt-get update && apt-get install -y sudo && \
     echo "opencode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/opencode && \
-    chmod 0440 /etc/sudoers.d/opencode && \
-    rm -rf /var/lib/apt/lists/*
+    chmod 0440 /etc/sudoers.d/opencode
 
 # Create data directory structure for single volume mount (before copying config)
 RUN mkdir -p /data/workspace /data/opencode-local /data/opencode-config && \
@@ -63,15 +55,6 @@ RUN mkdir -p /data/workspace /data/opencode-local /data/opencode-config && \
     ln -sf /data/opencode-local /root/.local/share/opencode && \
     ln -sf /data/opencode-config /root/.config/opencode && \
     chown -R opencode:opencode /data/workspace
-
-# Copy opencode config to workspace (now symlinked to /data/workspace)
-COPY opencode.json /home/opencode/workspace/
-RUN chown opencode:opencode /home/opencode/workspace/opencode.json
-
-# Install Node.js (LTS)
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
 
 # Install Bun
 RUN curl -fsSL https://bun.sh/install | bash
@@ -86,6 +69,9 @@ RUN curl -fsSL https://opencode.ai/install | bash && \
     export PATH="${PATH}:$(find /root -name opencode -type f -executable 2>/dev/null | xargs dirname | head -1)" || true
 ENV PATH="${PATH}:/root/.local/bin:/root/.opencode/bin"
 
+# Copy opencode config late to preserve install-layer cache when config changes.
+COPY --chown=opencode:opencode opencode.json /home/opencode/workspace/
+
 # Verify installations
 RUN echo "=== Python ===" && python3 --version && \
     echo "=== Node.js ===" && node --version && \
@@ -94,11 +80,7 @@ RUN echo "=== Python ===" && python3 --version && \
     echo "=== uv ===" && uv --version && \
     echo "=== GitHub CLI ===" && gh --version && \
     echo "=== Tailscale ===" && tailscale version && \
-    echo "=== OpenCode ===" && opencode --version && \
-    echo "=== Rclone ===" && rclone version
-
-# Set proper permissions for workspace
-RUN chown -R opencode:opencode /data/workspace
+    echo "=== OpenCode ===" && opencode --version
 
 # Create Tailscale state directory
 RUN mkdir -p /var/lib/tailscale /var/run/tailscale

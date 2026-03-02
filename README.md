@@ -18,6 +18,8 @@ A containerized development environment running OpenCode WebUI with comprehensiv
 
 ## Quick Start
 
+Default usage is `docker run` (not Docker Compose).
+
 ### Basic Usage
 
 ```bash
@@ -94,7 +96,7 @@ The `data` directory will contain:
 - `opencode-local/` - OpenCode API keys and auth tokens
 - `opencode-config/` - OpenCode configuration files
 
-### Docker Compose Example
+### Optional: Docker Compose
 
 Run with:
 ```bash
@@ -147,8 +149,6 @@ node --version        # v24.13.0
 bun --version         # 1.3.6
 uv --version          # 0.9.26
 gh --version          # GitHub CLI
-rclone version        # Cloud storage sync
-wormhole              # Secure file transfer
 ```
 
 ## User & Permissions

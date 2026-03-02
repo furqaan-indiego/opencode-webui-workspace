@@ -1,0 +1,30 @@
+.git
+.github
+.gitignore
+.env
+.env.*
+
+# Local runtime/work directories
+data
+workspace
+opencode-data
+opencode-config
+projects
+logs
+
+# Editor/OS noise
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Dependency/build outputs
+node_modules
+dist
+build
+coverage
+.next
+.cache
