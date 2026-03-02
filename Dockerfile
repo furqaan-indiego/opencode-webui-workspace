@@ -21,6 +21,20 @@ RUN apt-get update && apt-get install -y \
     magic-wormhole \
     && rm -rf /var/lib/apt/lists/*
 
+# Install GitHub CLI (gh) - https://github.com/cli/cli/blob/trunk/docs/install_linux.md
+RUN mkdir -p -m 755 /etc/apt/keyrings && \
+    wget -nv -O- https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && \
+    chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
+    apt-get update && apt-get install -y gh && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Tailscale - https://tailscale.com/download/linux
+RUN curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null && \
+    curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list >/dev/null && \
+    apt-get update && apt-get install -y tailscale && \
+    rm -rf /var/lib/apt/lists/*
+
 # Add deadsnakes PPA for Python 3.13
 RUN add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && apt-get install -y \
@@ -94,15 +108,44 @@ RUN echo "=== Python ===" && python3 --version && \
     echo "=== Go ===" && go version && \
     echo "=== Rust ===" && rustc --version && \
     echo "=== Cargo ===" && cargo --version && \
+    echo "=== GitHub CLI ===" && gh --version && \
+    echo "=== Tailscale ===" && tailscale version && \
     echo "=== OpenCode ===" && opencode --version && \
     echo "=== Rclone ===" && rclone version
 
 # Set proper permissions for workspace
 RUN chown -R opencode:opencode /home/opencode/workspace
 
-# Switch to opencode user
-USER opencode
+# Create Tailscale state directory
+RUN mkdir -p /var/lib/tailscale /var/run/tailscale
+
+# Create entrypoint script for Tailscale + OpenCode
+RUN echo '#!/bin/bash\n\
+set -e\n\
+export PATH="${PATH}:/root/.local/bin:/root/.opencode/bin"\n\
+\n\
+# Start Tailscale if auth key is provided\n\
+if [ -n "$TAILSCALE_AUTH_KEY" ]; then\n\
+  echo "Starting Tailscale daemon..."\n\
+  /usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state &\n\
+  sleep 2\n\
+  echo "Connecting to Tailscale network..."\n\
+  tailscale up --auth-key="$TAILSCALE_AUTH_KEY" --accept-routes --ssh\n\
+  echo "Waiting for Tailscale connection..."\n\
+  for i in {1..30}; do\n\
+    if tailscale status > /dev/null 2>&1; then\n\
+      echo "Tailscale connected: $(tailscale ip -4)"\n\
+      break\n\
+    fi\n\
+    echo "Waiting for connection... ($i/30)"\n\
+    sleep 1\n\
+  done\n\
+fi\n\
+\n\
+# Run opencode with passed arguments\n\
+exec opencode "$@"\n\
+' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Set entrypoint and default command
-ENTRYPOINT ["opencode"]
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["web", "--port", "4096", "--hostname", "0.0.0.0"]

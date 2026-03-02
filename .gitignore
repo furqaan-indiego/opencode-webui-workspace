@@ -5,6 +5,8 @@
 
 # Local data directories
 workspace/
+opencode-data/
+opencode-config/
 projects/
 data/
 logs/

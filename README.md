@@ -62,6 +62,23 @@ OPENCODE_HOSTNAME=0.0.0.0
 - **OPENCODE_PORT**: Port to listen on (default: 4096)
 - **OPENCODE_HOSTNAME**: Hostname/IP to bind to (default: 0.0.0.0)
 
+### Tailscale Setup
+
+To connect your container to your Tailscale network:
+
+1. Go to [Tailscale Admin Console](https://login.tailscale.com/admin/machines)
+2. Click **Add device** → **Linux server**
+3. Enable the following options:
+   - **Ephemeral** - Container will be removed from tailnet when stopped
+   - **Reusable** - Allows multiple containers to use the same key
+4. Click **Generate install script**
+5. Copy the auth key (starts with `tskey-auth-`)
+6. Set it as the `TAILSCALE_AUTH_KEY` environment variable in Railway
+
+```env
+TAILSCALE_AUTH_KEY=tskey-auth-xxxxxxxxxxxx
+```
+
 ## Volume Mounting
 
 Mount the workspace directory to persist your projects and data:
