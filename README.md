@@ -2,7 +2,7 @@
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/opencode-webui-workspace?referralCode=Z1xivh&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
-A containerized development environment running OpenCode WebUI with comprehensive tooling support. This Docker image includes Python, Node.js, Bun, Go, Rust, and essential development tools, all running under a non-root `opencode` user with sudo privileges.
+A containerized development environment running OpenCode WebUI with comprehensive tooling support. This Docker image includes Python, Node.js, Bun, and essential development tools, all running under a non-root `opencode` user with sudo privileges.
 
 ## Features
 
@@ -10,9 +10,9 @@ A containerized development environment running OpenCode WebUI with comprehensiv
 - **Python 3.13.11** with `python` alias
 - **Node.js 24.13.0** with npm 11.6.2
 - **Bun 1.3.6** - Fast JavaScript runtime
-- **Go 1.23.5** - Systems programming language
-- **Rust 1.92.0** with Cargo - Systems programming language
 - **uv 0.9.26** - Python package manager
+- **GitHub CLI** - Official GitHub command-line tool
+- **Tailscale** - Secure networking
 - **Non-root user** (`opencode`) with passwordless sudo access
 - **Pre-configured workspace** at `/home/opencode/workspace`
 
@@ -145,9 +145,8 @@ docker run -it --rm \
 python --version      # Python 3.13.11
 node --version        # v24.13.0
 bun --version         # 1.3.6
-go version            # go1.23.5
-rustc --version       # 1.92.0
 uv --version          # 0.9.26
+gh --version          # GitHub CLI
 rclone version        # Cloud storage sync
 wormhole              # Secure file transfer
 ```
