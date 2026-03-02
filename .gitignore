@@ -3,12 +3,12 @@
 .env.local
 .env.*.local
 
-# Local data directories
+# Local data directories (single volume mount)
+data/
 workspace/
 opencode-data/
 opencode-config/
 projects/
-data/
 logs/
 
 # Docker volumes

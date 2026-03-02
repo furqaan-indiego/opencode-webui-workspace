@@ -18,9 +18,7 @@ services:
       TAILSCALE_AUTH_KEY: ${TAILSCALE_AUTH_KEY:-}
     command: ["web", "--port", "4096", "--hostname", "0.0.0.0"]
     volumes:
-      - ./workspace:/home/opencode/workspace
-      - ./opencode-data:/root/.local/share/opencode
-      - ./opencode-config:/root/.config/opencode
+      - ./data:/data
     restart: unless-stopped
     networks:
       - opencode-network

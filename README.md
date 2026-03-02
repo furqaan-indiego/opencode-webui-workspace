@@ -81,15 +81,18 @@ TAILSCALE_AUTH_KEY=tskey-auth-xxxxxxxxxxxx
 
 ## Volume Mounting
 
-Mount the workspace directory to persist your projects and data:
+Mount a single data directory to persist all your work, configurations, and credentials:
 
 ```bash
 docker run -p 4096:4096 \
-  -v $(pwd)/workspace:/home/opencode/workspace \
+  -v $(pwd)/data:/data \
   opencode-webui-workspace:latest
 ```
 
-The `workspace` directory will be created on your host machine automatically on first run. Inside the container, all your work is stored in `/home/opencode/workspace`.
+The `data` directory will contain:
+- `workspace/` - Your project files
+- `opencode-local/` - OpenCode API keys and auth tokens
+- `opencode-config/` - OpenCode configuration files
 
 ### Docker Compose Example
 
@@ -98,7 +101,7 @@ Run with:
 docker-compose up -d
 ```
 
-The `./workspace` directory will be created on your host machine on first run.
+The `./data` directory will be created on your host machine on first run with all subdirectories.
 
 ## Advanced Usage
 
@@ -133,9 +136,9 @@ docker run -it --rm opencode-webui-workspace:latest python -c "print('Hello from
 ### Development Workflow
 
 ```bash
-# Mount workspace and run interactive shell
+# Mount data volume and run interactive shell
 docker run -it --rm \
-  -v $(pwd)/workspace:/home/opencode/workspace \
+  -v $(pwd)/data:/data \
   opencode-webui-workspace:latest bash
 
 # Inside container, all your tools are available:
@@ -160,15 +163,16 @@ This ensures security while allowing necessary system operations.
 
 ## File Structure
 
-The container provides a clean workspace at `/home/opencode/workspace/`. You can create your own directory structure:
+The container uses a single `/data` volume for all persistent data, with symlinks to standard locations:
 
 ```
-/home/opencode/workspace/
-├── projects/          # Your project files (you create this)
-├── data/              # Your data files (you create this)
-├── logs/              # Your log files (you create this)
-└── opencode.json      # OpenCode configuration (included in image)
+/data/
+├── workspace/              # Your project files (→ /home/opencode/workspace)
+├── opencode-local/         # API keys & auth (→ /root/.local/share/opencode)
+└── opencode-config/        # Config files (→ /root/.config/opencode)
 ```
+
+This structure allows Railway and other platforms to mount a single volume while keeping everything persistent.
 
 ## Publishing Images
 

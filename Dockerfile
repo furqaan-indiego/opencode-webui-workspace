@@ -119,10 +119,23 @@ RUN chown -R opencode:opencode /home/opencode/workspace
 # Create Tailscale state directory
 RUN mkdir -p /var/lib/tailscale /var/run/tailscale
 
+# Create data directory structure for single volume mount
+RUN mkdir -p /data/workspace /data/opencode-local /data/opencode-config && \
+    rm -rf /home/opencode/workspace && \
+    ln -sf /data/workspace /home/opencode/workspace && \
+    mkdir -p /root/.local/share /root/.config && \
+    ln -sf /data/opencode-local /root/.local/share/opencode && \
+    ln -sf /data/opencode-config /root/.config/opencode && \
+    chown -R opencode:opencode /data/workspace
+
 # Create entrypoint script for Tailscale + OpenCode
 RUN echo '#!/bin/bash\n\
 set -e\n\
 export PATH="${PATH}:/root/.local/bin:/root/.opencode/bin"\n\
+\n\
+# Ensure data directories exist and have correct permissions\n\
+mkdir -p /data/workspace /data/opencode-local /data/opencode-config\n\
+chown -R opencode:opencode /data/workspace 2>/dev/null || true\n\
 \n\
 # Start Tailscale if auth key is provided\n\
 if [ -n "$TAILSCALE_AUTH_KEY" ]; then\n\
